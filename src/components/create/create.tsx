@@ -5,16 +5,17 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 
 const Create: React.FC = () => {
-	function getData() {
-		let data: any = localStorage.getItem("todos");
+	const [data, setData] = useState<any>([]);
+	useEffect(() => {
+		let data: any = window.localStorage.getItem("todos");
 		let json = JSON.parse(data);
-
 		if (json) {
-			return json;
+			setData(json);
 		}
-		return [];
-	}
-	const [todos, setTodos] = useState(getData());
+		setData([]);
+	}, []);
+
+	const [todos, setTodos] = useState(data);
 	const [editingIndex, setEditingIndex] = useState<number | null>(null);
 	const [editValue, setEditValue] = useState("");
 
