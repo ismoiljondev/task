@@ -138,7 +138,7 @@ const Create: React.FC = () => {
 							</div>
 							<div className="flex flex-col text-[#808080] items-center">
 								<h3 className="font-bold text-xl text-center">
-									You don't have tasks registered yet Create
+									You do not have tasks registered yet Create
 									tasks
 								</h3>
 								<p>and organize your to-do items</p>
@@ -225,7 +225,7 @@ const Create: React.FC = () => {
 											</div>
 										</div>
 										<div>
-											<p className={`break-all`}>
+											<p className="break-all">
 												{todo.task}
 											</p>
 										</div>
