@@ -20,7 +20,7 @@ const Create: React.FC = () => {
 	const [editValue, setEditValue] = useState("");
 
 	useEffect(() => {
-		localStorage.setItem("todos", JSON.stringify(todos));
+		window.localStorage.setItem("todos", JSON.stringify(todos));
 	}, [todos]);
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
