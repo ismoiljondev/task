@@ -3,35 +3,39 @@ import React, { useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-
-const Create: React.FC = () => {
+import plus from "@/logo/plus.svg";
+import nodata from "@/logo/noitem.svg";
+import check from "@/logo/check.svg";
+import x from "@/logo/x.svg";
+import edit from "@/logo/edit.svg";
+import Image from "next/image";
+const CreateCopy: React.FC = () => {
 	const [data, setData] = useState<any>([]);
-	useEffect(() => {
-		let data: any = localStorage.getItem("todos");
-		let json = JSON.parse(data);
+	function getData() {
+		const getdata: any = localStorage.getItem("todos");
+		const json = JSON.parse(getdata);
 		if (json) {
-			setData(json);
+			return json;
 		}
-		setData([]);
-	}, []);
+		return [];
+	}
 
-	const [todos, setTodos] = useState(data);
+	const [todos, setTodos] = useState(getData());
 	const [editingIndex, setEditingIndex] = useState<number | null>(null);
 	const [editValue, setEditValue] = useState("");
-
+	console.log(todos);
 	useEffect(() => {
-		localStorage.setItem("todos", JSON.stringify(todos));
+		window.localStorage.setItem("todos", JSON.stringify(todos));
 	}, [todos]);
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		let task = e.currentTarget.task.value;
+		const task = e.currentTarget.task.value;
 
 		if (!task) {
 			alert("Please provide a valid task");
 			return;
 		}
-
 		setTodos([...todos, { task: task, completed: true }]);
 
 		e.currentTarget.reset();
@@ -64,6 +68,7 @@ const Create: React.FC = () => {
 		newTodos.splice(index, 1);
 		setTodos(newTodos);
 	}
+
 	return (
 		<div className="flex flex-col rounded-md w-4/6 pt-0 -m-6 max-lg:w-4/5 max-md:w-5/6 max-md:p-4 max-sm:w-full">
 			<form
@@ -82,21 +87,7 @@ const Create: React.FC = () => {
 					className="flex "
 					size={"custom"}
 				>
-					Add{" "}
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="1.5"
-						stroke="currentColor"
-						className="w-6 h-6"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-						/>
-					</svg>
+					Add <Image src={plus} alt="plus" />
 				</Button>
 			</form>
 			<div className="flex flex-col gap-4 scroll-smooth">
@@ -123,20 +114,12 @@ const Create: React.FC = () => {
 						<hr className="border-[#333333]" />
 						<div className="flex flex-col items-center justify-center mt-20">
 							<div>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-									className="w-20 h-20 text-[#808080]"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
-									/>
-								</svg>
+								<Image
+									src={nodata}
+									alt="noitem"
+									width={100}
+									height={100}
+								/>
 							</div>
 							<div className="flex flex-col text-[#808080] items-center">
 								<h3 className="font-bold text-xl text-center">
@@ -188,20 +171,10 @@ const Create: React.FC = () => {
 														: "hidden"
 												}`}
 											>
-												<svg
-													xmlns="http://www.w3.org/2000/svg"
-													fill="none"
-													viewBox="0 0 24 24"
-													strokeWidth="1.5"
-													stroke="currentColor"
-													className="w-6 h-6 text-[#F5F5F5]"
-												>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-													/>
-												</svg>
+												<Image
+													src={check}
+													alt="check"
+												/>
 											</div>
 											<div
 												className={`${
@@ -210,20 +183,7 @@ const Create: React.FC = () => {
 														: "cursor-pointer"
 												}`}
 											>
-												<svg
-													xmlns="http://www.w3.org/2000/svg"
-													fill="none"
-													viewBox="0 0 24 24"
-													strokeWidth="1.5"
-													stroke="currentColor"
-													className="w-6 h-6 "
-												>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-													/>
-												</svg>
+												<Image src={x} alt="x" />
 											</div>
 										</div>
 										<div>
@@ -234,30 +194,17 @@ const Create: React.FC = () => {
 									</div>
 									<div className="flex gap-4">
 										<div
-											className={`cursor-pointer text-[#F5F5F5]  ${
+											className={`cursor-pointer text-[#F5F5F5] ${
 												todo.completed
 													? "text-[#F5F5F5]"
-													: "text-[#7A7777] line-through"
+													: "hidden"
 											}`}
 											onClick={() => {
 												setEditingIndex(index);
 												setEditValue(todo.task);
 											}}
 										>
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												fill="none"
-												viewBox="0 0 24 24"
-												strokeWidth="1.5"
-												stroke="currentColor"
-												className="w-6 h-6"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
-												/>
-											</svg>
+											<Image src={edit} alt="edit" />
 										</div>
 										<div
 											className="cursor-pointer"
@@ -269,7 +216,7 @@ const Create: React.FC = () => {
 												viewBox="0 0 24 24"
 												strokeWidth="1.5"
 												stroke="currentColor"
-												className="w-6 h-6 "
+												className="w-6 h-6"
 											>
 												<path
 													strokeLinecap="round"
@@ -289,4 +236,4 @@ const Create: React.FC = () => {
 	);
 };
 
-export default Create;
+export default CreateCopy;
