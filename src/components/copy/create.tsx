@@ -2,113 +2,199 @@
 import React, { useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
 import plus from "@/logo/plus.svg";
 import nodata from "@/logo/noitem.svg";
-import check from "@/logo/check.svg";
-import x from "@/logo/x.svg";
-import edit from "@/logo/edit.svg";
 import Image from "next/image";
+import info from "@/logo/info.svg";
+import share from "@/logo/share.svg";
+import filter from "@/logo/filter.svg";
+import trash from "@/logo/trash.svg";
+import logo from "@/logo/Logo.svg";
+import {
+	FieldPath,
+	addDoc,
+	collection,
+	deleteDoc,
+	doc,
+	getDocs,
+	onSnapshot,
+	orderBy,
+	query,
+	updateDoc,
+} from "firebase/firestore";
+import { db } from "@/firebase";
+import { SubmitHandler, useForm } from "react-hook-form";
+import Todolist from "../todolist/todolist";
+import Tasks from "../tasks/tasks";
+import { Textarea } from "../ui/textarea";
+type Todo = {
+	desc: string;
+	todo: string;
+	completed: boolean;
+};
+
 const CreateCopy: React.FC = () => {
-	const [data, setData] = useState<any>([]);
-	function getData() {
-		const getdata: any = localStorage.getItem("todos");
-		const json = JSON.parse(getdata);
-		if (json) {
-			return json;
-		}
-		return [];
-	}
+	const [todos, setTodos] = useState<any>([]);
+	const [title, setTitle] = useState<string>("");
+	const [desc, setDesc] = useState<string>("");
+	const [editValue, setEditValue] = useState(-1);
+	const [sortBy, setSortBy] = useState<string>("todo" || "completed");
+	const {
+		register,
+		handleSubmit,
+		setValue,
+		formState: { errors },
+		reset,
+	} = useForm<Todo>();
 
-	const [todos, setTodos] = useState(getData());
-	const [editingIndex, setEditingIndex] = useState<number | null>(null);
-	const [editValue, setEditValue] = useState("");
-	console.log(todos);
 	useEffect(() => {
-		window.localStorage.setItem("todos", JSON.stringify(todos));
-	}, [todos]);
+		const unsubscribe = onSnapshot(
+			query(collection(db, "todos"), orderBy(sortBy)),
+			(snapshot) => {
+				const todosData: any = snapshot.docs.map((doc) => ({
+					id: doc.id,
+					...doc.data(),
+				}));
+				setTodos(todosData);
+			}
+		);
+		return () => unsubscribe();
+	}, [sortBy]);
 
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		const task = e.currentTarget.task.value;
-
-		if (!task) {
-			alert("Please provide a valid task");
-			return;
+	const onSubmit: SubmitHandler<Todo> = async (data) => {
+		try {
+			if (editValue !== -1) {
+				const todoDocRef = doc(db, "todos", todos[editValue].id);
+				await updateDoc(todoDocRef, data);
+				setEditValue(-1);
+			} else {
+				await addDoc(collection(db, "todos"), {
+					...data,
+					completed: false,
+				});
+			}
+			reset();
+		} catch (err) {
+			console.error(err);
 		}
-		setTodos([...todos, { task: task, completed: true }]);
-
-		e.currentTarget.reset();
 	};
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setEditValue(e.target.value);
+	const setEdit = (index: number) => {
+		setTitle(todos[index].todo);
+		setDesc(todos[index].desc);
+		setEditValue(index);
 	};
 
-	const handleUpdate = () => {
-		if (!editValue.trim()) {
-			alert("Please provide a valid task");
-			return;
+	const addTodo = () => {
+		try {
+			if (title?.trim() !== "" && desc.trim() !== "") {
+				addDoc(collection(db, "todos"), {
+					todo: title,
+					completed: false,
+					desc: desc,
+				});
+			}
+		} catch (err: any) {
+			console.error(err.message);
 		}
-
-		const updatedTodos = [...todos];
-		updatedTodos[editingIndex!].task = editValue;
-		setTodos(updatedTodos);
-		setEditingIndex(null);
-		setEditValue("");
+		setDesc("");
+		setTitle("");
 	};
 
-	function changeTaskStatus(index: number) {
-		let newTodos = [...todos];
-		newTodos[index].completed = !newTodos[index].completed;
-		setTodos(newTodos);
-	}
-	function deleteTask(index: number) {
-		let newTodos = [...todos];
-		newTodos.splice(index, 1);
-		setTodos(newTodos);
-	}
+	const updateTodo = () => {
+		try {
+			if (title?.trim() !== "") {
+				const todoDocRef = doc(db, "todos", todos[editValue].id);
+				updateDoc(todoDocRef, { todo: title, desc: desc });
+				setEditValue(-1);
+				setDesc("");
+				setTitle("");
+			}
+		} catch (err: any) {
+			console.error(err.message);
+		}
+	};
 
+	const deleteTodo = (id: any) => {
+		if (window.confirm("Are you sure you want to todo?")) {
+			try {
+				deleteDoc(doc(db, "todos", id));
+			} catch (err) {
+				console.log(err);
+			}
+		}
+	};
+	const deleteAllTodos = async () => {
+		if (window.confirm("Are you sure you want to delete all todos?")) {
+			try {
+				const todoCollectionRef = collection(db, "todos");
+				const querySnapshot = await getDocs(todoCollectionRef);
+				querySnapshot.forEach(async (doc) => {
+					await deleteDoc(doc.ref);
+				});
+			} catch (err) {
+				console.error(err);
+			}
+		}
+	};
+	const changeStatus = (index: number) => {
+		try {
+			const todoDocRef = doc(db, "todos", todos[index].id);
+			updateDoc(todoDocRef, { completed: !todos[index].completed });
+		} catch (err: any) {
+			console.error(err.message);
+		}
+	};
+	const handleSort = (sortKey: string) => {
+		setSortBy(sortKey);
+	};
 	return (
-		<div className="flex flex-col rounded-md w-4/6 pt-0 -m-6 max-lg:w-4/5 max-md:w-5/6 max-md:p-4 max-sm:w-full">
-			<form
-				onSubmit={handleSubmit}
-				className="flex w-full gap-2 items-center mb-14"
-			>
-				<Input
-					type="text"
-					className="w-full font-medium text-lg py-8 border-2 outline-none border-r-0 bg-[#262626] text-[#808080] border-none focus-visible:none max-md:py-6"
-					placeholder="Enter task"
-					name="task"
-				/>
-				<Button
-					variant={"customBtn"}
-					type="submit"
-					className="flex "
-					size={"custom"}
-				>
-					Add <Image src={plus} alt="plus" />
-				</Button>
-			</form>
-			<div className="flex flex-col gap-4 scroll-smooth">
-				{
-					<div className="flex justify-between">
-						<h2 className="text-[#4EA8DE]">
-							Tasks created <Badge>{todos.length}</Badge>
-						</h2>
-						<h2 className="text-[#8284FA]">
-							Completed{" "}
-							<Badge>
-								{
-									todos.filter(
-										(e: any) => e.completed === false
-									).length
-								}{" "}
-								of {todos.length}
-							</Badge>
-						</h2>
+		<div className="flex flex-col min-h-screen rounded-md w-4/6 py-10 max-lg:w-4/5 max-md:w-5/6 max-md:p-4 max-sm:w-full ">
+			<form onSubmit={handleSubmit(onSubmit)} className="">
+				<div className="flex flex-col w-full gap-10 items-center">
+					<div>
+						<Image src={logo} alt="logo" />
 					</div>
-				}
+					<div className="w-full flex flex-col gap-3">
+						<Input
+							type="text"
+							className="w-full font-medium text-lg py-8 border-2 outline-none border-r-0 bg-[#262626] text-[#808080] border-none focus-visible:none max-md:py-6"
+							placeholder="Enter task"
+							{...register("todo", {
+								required: "This field is required",
+							})}
+							value={title}
+							onChange={(e: any) => setTitle(e.target.value)}
+						/>
+						<Textarea
+							className="w-full font-medium text-lg border-2 outline-none border-r-0 bg-[#262626] text-[#808080] border-none focus-visible:none max-md:py-6"
+							placeholder="Type your message here."
+							{...register("desc", {
+								required: "This field is required",
+							})}
+							value={desc}
+							onChange={(e: any) => setDesc(e.target.value)}
+						/>
+					</div>
+					<Button
+						variant={"customBtn"}
+						type="submit"
+						className="flex "
+						size={"custom"}
+						onClick={editValue === -1 ? addTodo : updateTodo}
+					>
+						{editValue === -1 ? (
+							<>
+								Add <Image src={plus} alt="plus" />
+							</>
+						) : (
+							<>Update</>
+						)}
+					</Button>
+				</div>
+			</form>
+			<div className="flex flex-col gap-4 scroll-smooth mb-5">
+				{<Tasks todos={todos} />}
 				{todos.length === 0 ? (
 					<div>
 						<hr className="border-[#333333]" />
@@ -131,106 +217,32 @@ const CreateCopy: React.FC = () => {
 						</div>
 					</div>
 				) : (
-					todos.map((todo: any, index: number) => (
-						<div
-							key={index}
-							className={`rounded-md mt-4 p-5 flex justify-between text-lg bg-[#262626]  ${
-								todo.completed
-									? "text-[#F5F5F5]"
-									: "text-[#7A7777] line-through"
-							}`}
-						>
-							{editingIndex === index ? (
-								<div className="flex gap-3 w-full">
-									<Input
-										type="text"
-										value={editValue}
-										onChange={handleChange}
-										autoFocus
-										className="text-black w-full"
-									/>
-									<Button
-										onClick={handleUpdate}
-										variant={"customBtn"}
-									>
-										Update
-									</Button>
-								</div>
-							) : (
-								<div className="flex gap-3 justify-between w-full">
-									<div className="flex gap-4">
-										<div
-											onClick={() =>
-												changeTaskStatus(index)
-											}
-										>
-											<div
-												className={`${
-													todo.completed
-														? "cursor-pointer"
-														: "hidden"
-												}`}
-											>
-												<Image
-													src={check}
-													alt="check"
-												/>
-											</div>
-											<div
-												className={`${
-													todo.completed
-														? "hidden"
-														: "cursor-pointer"
-												}`}
-											>
-												<Image src={x} alt="x" />
-											</div>
-										</div>
-										<div>
-											<p className="break-all">
-												{todo.task}
-											</p>
-										</div>
-									</div>
-									<div className="flex gap-4">
-										<div
-											className={`cursor-pointer text-[#F5F5F5] ${
-												todo.completed
-													? "text-[#F5F5F5]"
-													: "hidden"
-											}`}
-											onClick={() => {
-												setEditingIndex(index);
-												setEditValue(todo.task);
-											}}
-										>
-											<Image src={edit} alt="edit" />
-										</div>
-										<div
-											className="cursor-pointer"
-											onClick={() => deleteTask(index)}
-										>
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												fill="none"
-												viewBox="0 0 24 24"
-												strokeWidth="1.5"
-												stroke="currentColor"
-												className="w-6 h-6"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-												/>
-											</svg>
-										</div>
-									</div>
-								</div>
-							)}
-						</div>
-					))
+					<Todolist
+						todos={todos}
+						changeStatus={changeStatus}
+						deleteTodo={deleteTodo}
+						setEdit={setEdit}
+					/>
 				)}
+			</div>
+			<div className="rounded-md mt-auto p-5 flex justify-center gap-20 text-lg bg-[#262626] max-md:gap-10">
+				<Image src={info} alt="inf" />
+				{/* <Image src={share} alt="share" /> */}
+				<Button variant="customBtn" onClick={() => handleSort("todo")}>
+					Sort A-Z
+				</Button>
+				<Button
+					variant="customBtn"
+					onClick={() => handleSort("completed")}
+				>
+					Sort by Completed
+				</Button>
+				<Image
+					src={trash}
+					alt="trash"
+					className="cursor-pointer"
+					onClick={() => deleteAllTodos()}
+				/>
 			</div>
 		</div>
 	);
