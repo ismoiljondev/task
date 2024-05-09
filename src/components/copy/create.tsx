@@ -12,17 +12,19 @@ import trash from "@/logo/trash.svg";
 import logo from "@/logo/Logo.svg";
 import {
 	FieldPath,
+	Timestamp,
 	addDoc,
 	collection,
 	deleteDoc,
 	doc,
+	getDoc,
 	getDocs,
 	onSnapshot,
 	orderBy,
 	query,
 	updateDoc,
 } from "firebase/firestore";
-import { db } from "@/firebase";
+import { auth, db } from "@/firebase";
 import { SubmitHandler, useForm } from "react-hook-form";
 import Todolist from "../todolist/todolist";
 import Tasks from "../tasks/tasks";
@@ -31,8 +33,8 @@ type Todo = {
 	desc: string;
 	todo: string;
 	completed: boolean;
-	createdAt: number;
-	deadline: number | string;
+	createdAt: Timestamp;
+	deadline: Timestamp | string;
 };
 
 const CreateCopy: React.FC = () => {
@@ -42,6 +44,49 @@ const CreateCopy: React.FC = () => {
 	const [deadline, setDeadline] = useState<number | string>("");
 	const [editValue, setEditValue] = useState(-1);
 	const [sortBy, setSortBy] = useState<string>("todo" || "completed");
+	const [userDetail, setUserDetail] = useState(null);
+
+	const fetchUserData = async () => {
+		const user = auth.currentUser;
+		if (user) {
+			try {
+				const userRef: any = doc(db, "Users", user.uid); // Assuming "Users" is the collection where user data is stored
+				const userSnap: any = await getDoc(userRef); // Use getDoc instead of getDocs for a single document
+				if (userSnap.exists()) {
+					setUserDetail(userSnap.data());
+				}
+			} catch (error) {
+				console.error("Error fetching user data:", error);
+			}
+		} else {
+			console.log("User not logged in");
+		}
+	};
+
+	useEffect(() => {
+		fetchUserData();
+	}, []);
+
+	useEffect(() => {
+		const unsubscribe = onSnapshot(
+			query(
+				collection(db, `Users/${auth?.currentUser?.uid}/todos`),
+				orderBy(sortBy)
+			),
+			(snapshot) => {
+				const todosData: any = [];
+				snapshot.forEach((doc) => {
+					todosData.push({
+						id: doc.id,
+						...doc.data(),
+					} as unknown as Todo);
+				});
+				setTodos(todosData);
+			}
+		);
+		return () => unsubscribe();
+	}, [sortBy]);
+
 	const {
 		register,
 		handleSubmit,
@@ -49,33 +94,25 @@ const CreateCopy: React.FC = () => {
 		formState: { errors },
 		reset,
 	} = useForm<Todo>();
-
-	useEffect(() => {
-		const unsubscribe = onSnapshot(
-			query(collection(db, "todos"), orderBy(sortBy)),
-			(snapshot) => {
-				const todosData: any = snapshot.docs.map((doc) => ({
-					id: doc.id,
-					...doc.data(),
-				}));
-				setTodos(todosData);
-			}
-		);
-		return () => unsubscribe();
-	}, [sortBy]);
-
 	const onSubmit: SubmitHandler<Todo> = async (data) => {
 		try {
 			if (editValue !== -1) {
-				const todoDocRef = doc(db, "todos", todos[editValue].id);
+				const todoDocRef = doc(
+					db,
+					`Users/${auth?.currentUser?.uid}/todos`,
+					todos[editValue].id
+				);
 				await updateDoc(todoDocRef, data);
 				setEditValue(-1);
 			} else {
-				await addDoc(collection(db, "todos"), {
-					...data,
-					completed: false,
-					createdAt: new Date().toLocaleString(),
-				});
+				await addDoc(
+					collection(db, `Users/${auth?.currentUser?.uid}/todos`),
+					{
+						...data,
+						completed: false,
+						createdAt: new Date().toLocaleString(),
+					}
+				);
 			}
 			reset();
 		} catch (err) {
@@ -93,13 +130,16 @@ const CreateCopy: React.FC = () => {
 	const addTodo = () => {
 		try {
 			if (title?.trim() !== "" && desc.trim() !== "") {
-				addDoc(collection(db, "todos"), {
-					todo: title,
-					completed: false,
-					desc: desc,
-					createdAt: new Date().toLocaleString(),
-					deadline: deadline,
-				});
+				addDoc(
+					collection(db, `Users/${auth?.currentUser?.uid}/todos`),
+					{
+						todo: title,
+						completed: false,
+						desc: desc,
+						createdAt: new Date().toLocaleString(),
+						deadline: deadline,
+					}
+				);
 			}
 		} catch (err: any) {
 			console.error(err.message);
@@ -109,12 +149,14 @@ const CreateCopy: React.FC = () => {
 		setDeadline("");
 	};
 
-	console.log(deadline);
-
 	const updateTodo = () => {
 		try {
 			if (title?.trim() !== "" && desc.trim() !== "") {
-				const todoDocRef = doc(db, "todos", todos[editValue].id);
+				const todoDocRef = doc(
+					db,
+					`Users/${auth?.currentUser?.uid}/todos`,
+					todos[editValue].id
+				);
 				updateDoc(todoDocRef, {
 					todo: title,
 					desc: desc,
@@ -133,7 +175,7 @@ const CreateCopy: React.FC = () => {
 	const deleteTodo = (id: any) => {
 		if (window.confirm("Are you sure you want to todo?")) {
 			try {
-				deleteDoc(doc(db, "todos", id));
+				deleteDoc(doc(db, `Users/${auth?.currentUser?.uid}/todos`, id));
 			} catch (err) {
 				console.log(err);
 			}
@@ -143,7 +185,10 @@ const CreateCopy: React.FC = () => {
 		if (todos.length > 1) {
 			if (window.confirm("Are you sure you want to delete all todos?")) {
 				try {
-					const todoCollectionRef = collection(db, "todos");
+					const todoCollectionRef = collection(
+						db,
+						`Users/${auth?.currentUser?.uid}/todos`
+					);
 					const querySnapshot = await getDocs(todoCollectionRef);
 					querySnapshot.forEach(async (doc) => {
 						await deleteDoc(doc.ref);
@@ -156,7 +201,11 @@ const CreateCopy: React.FC = () => {
 	};
 	const changeStatus = (index: number) => {
 		try {
-			const todoDocRef = doc(db, "todos", todos[index].id);
+			const todoDocRef = doc(
+				db,
+				`Users/${auth?.currentUser?.uid}/todos`,
+				todos[index].id
+			);
 			updateDoc(todoDocRef, { completed: !todos[index].completed });
 		} catch (err: any) {
 			console.error(err.message);
@@ -166,7 +215,7 @@ const CreateCopy: React.FC = () => {
 		setSortBy(sortKey);
 	};
 	return (
-		<div className="flex flex-col min-h-screen rounded-md w-4/6 py-10 max-lg:w-4/5 max-md:w-5/6 max-md:p-4 max-sm:w-full ">
+		<div className="flex flex-col min-h-screen w-4/6 py-10 max-lg:w-4/5 my-10 max-md:w-5/6 max-md:p-4 max-sm:w-full justify-center  m-auto rounded-none md:rounded-2xl p-4 md:p-8 shadow-input bg-white dark:bg-black">
 			<form onSubmit={handleSubmit(onSubmit)} className="">
 				<div className="flex flex-col w-full gap-10 items-center">
 					<div>
@@ -175,7 +224,7 @@ const CreateCopy: React.FC = () => {
 					<div className="w-full flex flex-col gap-3">
 						<Input
 							type="text"
-							className="w-full font-medium text-lg py-8 border-2 outline-none text-white !placeholder-white border-r-0 bg-[#262626]  border-none focus-visible:none max-md:py-6 col-span-3"
+							className="w-full font-medium text-lg py-6 border-2 outline-none border-r-0 border-none focus-visible:none max-md:py-6 col-span-3"
 							placeholder="Enter task"
 							{...register("todo", {
 								required: "This field is required",
@@ -185,7 +234,7 @@ const CreateCopy: React.FC = () => {
 						/>
 
 						<Textarea
-							className="w-full font-medium text-lg border-2 outline-none text-white border-r-0 bg-[#262626] !placeholder-white border-none focus-visible:none max-md:py-6"
+							className="w-full font-medium text-lg border-2 outline-none  border-r-0 border-none focus-visible:none max-md:py-6"
 							placeholder="Type your message here."
 							{...register("desc", {
 								required: "This field is required",
@@ -193,33 +242,38 @@ const CreateCopy: React.FC = () => {
 							value={desc}
 							onChange={(e: any) => setDesc(e.target.value)}
 						/>
-						<Input
-							type="datetime-local"
-							className="w-fit font-medium text-lg py-8 border-2 outline-none border-r-0 bg-[#262626] text-[#808080] border-none focus-visible:none max-md:py-6"
-							style={{ color: "white" }}
-							{...register("deadline", {
-								required: "This field is required",
-							})}
-							value={`${deadline}`}
-							min={new Date().toLocaleString()}
-							onChange={(e: any) => setDeadline(e.target.value)}
-						/>
+						<div className="w-fit">
+							<Input
+								type="datetime-local"
+								className="w-fit font-medium text-lg py-6 border-2 outline-none border-r-0 border-none text-neutral-400 focus-visible:none max-md:py-6"
+								{...register("deadline", {
+									required: "This field is required",
+								})}
+								value={`${deadline}`}
+								onChange={(e: any) =>
+									setDeadline(e.target.value)
+								}
+							/>
+						</div>
 					</div>
-					<Button
-						variant={"customBtn"}
-						type="submit"
-						className="flex "
-						size={"custom"}
-						onClick={editValue === -1 ? addTodo : updateTodo}
-					>
-						{editValue === -1 ? (
-							<>
-								Add <Image src={plus} alt="plus" />
-							</>
-						) : (
-							<>Update</>
-						)}
-					</Button>
+					<div>
+						<Button
+							variant={"customBtn"}
+							type="submit"
+							className="flex relative group/btn py-3"
+							size={"custom"}
+							onClick={editValue === -1 ? addTodo : updateTodo}
+						>
+							{editValue === -1 ? (
+								<>
+									Add <Image src={plus} alt="plus" />
+								</>
+							) : (
+								<>Update</>
+							)}
+							<BottomGradient />
+						</Button>
+					</div>
 				</div>
 			</form>
 			<div className="flex flex-col gap-4 scroll-smooth my-5">
@@ -254,25 +308,53 @@ const CreateCopy: React.FC = () => {
 					/>
 				)}
 			</div>
-			<div className="rounded-md mt-auto p-5 flex justify-center gap-20 text-lg bg-[#262626] max-md:gap-10">
-				<Button variant="customBtn" onClick={() => handleSort("todo")}>
-					Sort A-Z
-				</Button>
+			<div
+				className="rounded-md mt-auto p-5 flex justify-center gap-20 text-lg max-md:gap-10 max-sm:gap-6 py-2 px-3  
+					items-center w-full text-black font-medium shadow-input bg-gray-50 dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_var(--neutral-800)]"
+			>
+				<div>
+					<Button
+						variant="customBtn"
+						className="relative group/btn"
+						onClick={() => handleSort("todo")}
+					>
+						Sort A-Z
+						<BottomGradient />
+					</Button>
+				</div>
+				<div>
+					<Button
+						className="relative group/btn"
+						variant="customBtn"
+						onClick={() => handleSort("completed")}
+					>
+						Sort by Completed
+						<BottomGradient />
+					</Button>
+				</div>
 				<Button
+					className="w-fit relative group/btn flex items-center"
 					variant="customBtn"
-					onClick={() => handleSort("completed")}
-				>
-					Sort by Completed
-				</Button>
-				<Image
-					src={trash}
-					alt="trash"
-					className="cursor-pointer"
 					onClick={() => deleteAllTodos()}
-				/>
+				>
+					<Image
+						src={trash}
+						alt="trash"
+						className=" cursor-pointer"
+					/>
+				</Button>
 			</div>
 		</div>
 	);
 };
 
 export default CreateCopy;
+
+const BottomGradient = () => {
+	return (
+		<>
+			<span className="group-hover/btn:opacity-100 block transition duration-500 opacity-0 absolute h-px w-full -bottom-px inset-x-0 bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+			<span className="group-hover/btn:opacity-100 blur-sm block transition duration-500 opacity-0 absolute h-px w-1/2 mx-auto -bottom-px inset-x-10 bg-gradient-to-r from-transparent via-indigo-500 to-transparent" />
+		</>
+	);
+};
