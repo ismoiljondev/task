@@ -1,4 +1,3 @@
-import Create from "@/components/create/create";
 import CreateCopy from "@/components/copy/create";
 export default function Home() {
 	return (
