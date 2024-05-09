@@ -61,6 +61,20 @@ const Todolist = ({ todos, changeStatus, deleteTodo, setEdit }: todoProps) => {
 								</div>
 								<div>
 									<p className="break-all">{todo.todo}</p>
+									<p className="text-[#808080] text-xs">
+										Created at:{" "}
+										{new Date(
+											todo.createdAt
+										).toLocaleString()}
+									</p>
+									{todo.deadline && (
+										<p className="text-[#808080] text-xs">
+											Deadline:{" "}
+											{new Date(
+												todo.deadline
+											).toLocaleString()}
+										</p>
+									)}
 								</div>
 							</div>
 							<div className="flex gap-4 self-end items-center">
@@ -91,7 +105,11 @@ const Todolist = ({ todos, changeStatus, deleteTodo, setEdit }: todoProps) => {
 								<ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
 							</div>
 						</AccordionTrigger>
-						<AccordionContent>{todo.desc}</AccordionContent>
+						<AccordionContent
+							className={`${todo.desc ? "" : "hidden"}`}
+						>
+							{todo.desc}
+						</AccordionContent>
 					</AccordionItem>
 				</Accordion>
 			))}

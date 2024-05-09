@@ -31,12 +31,15 @@ type Todo = {
 	desc: string;
 	todo: string;
 	completed: boolean;
+	createdAt: number;
+	deadline: number | string;
 };
 
 const CreateCopy: React.FC = () => {
 	const [todos, setTodos] = useState<any>([]);
 	const [title, setTitle] = useState<string>("");
 	const [desc, setDesc] = useState<string>("");
+	const [deadline, setDeadline] = useState<number | string>("");
 	const [editValue, setEditValue] = useState(-1);
 	const [sortBy, setSortBy] = useState<string>("todo" || "completed");
 	const {
@@ -71,6 +74,7 @@ const CreateCopy: React.FC = () => {
 				await addDoc(collection(db, "todos"), {
 					...data,
 					completed: false,
+					createdAt: new Date().toLocaleString(),
 				});
 			}
 			reset();
@@ -82,6 +86,7 @@ const CreateCopy: React.FC = () => {
 	const setEdit = (index: number) => {
 		setTitle(todos[index].todo);
 		setDesc(todos[index].desc);
+		setDeadline(todos[index].deadline);
 		setEditValue(index);
 	};
 
@@ -92,6 +97,8 @@ const CreateCopy: React.FC = () => {
 					todo: title,
 					completed: false,
 					desc: desc,
+					createdAt: new Date().toLocaleString(),
+					deadline: deadline,
 				});
 			}
 		} catch (err: any) {
@@ -99,16 +106,24 @@ const CreateCopy: React.FC = () => {
 		}
 		setDesc("");
 		setTitle("");
+		setDeadline("");
 	};
+
+	console.log(deadline);
 
 	const updateTodo = () => {
 		try {
-			if (title?.trim() !== "") {
+			if (title?.trim() !== "" && desc.trim() !== "") {
 				const todoDocRef = doc(db, "todos", todos[editValue].id);
-				updateDoc(todoDocRef, { todo: title, desc: desc });
+				updateDoc(todoDocRef, {
+					todo: title,
+					desc: desc,
+					deadline: deadline,
+				});
 				setEditValue(-1);
 				setDesc("");
 				setTitle("");
+				setDeadline("");
 			}
 		} catch (err: any) {
 			console.error(err.message);
@@ -125,15 +140,17 @@ const CreateCopy: React.FC = () => {
 		}
 	};
 	const deleteAllTodos = async () => {
-		if (window.confirm("Are you sure you want to delete all todos?")) {
-			try {
-				const todoCollectionRef = collection(db, "todos");
-				const querySnapshot = await getDocs(todoCollectionRef);
-				querySnapshot.forEach(async (doc) => {
-					await deleteDoc(doc.ref);
-				});
-			} catch (err) {
-				console.error(err);
+		if (todos.length > 1) {
+			if (window.confirm("Are you sure you want to delete all todos?")) {
+				try {
+					const todoCollectionRef = collection(db, "todos");
+					const querySnapshot = await getDocs(todoCollectionRef);
+					querySnapshot.forEach(async (doc) => {
+						await deleteDoc(doc.ref);
+					});
+				} catch (err) {
+					console.error(err);
+				}
 			}
 		}
 	};
@@ -158,7 +175,7 @@ const CreateCopy: React.FC = () => {
 					<div className="w-full flex flex-col gap-3">
 						<Input
 							type="text"
-							className="w-full font-medium text-lg py-8 border-2 outline-none border-r-0 bg-[#262626] text-[#808080] border-none focus-visible:none max-md:py-6"
+							className="w-full font-medium text-lg py-8 border-2 outline-none text-white !placeholder-white border-r-0 bg-[#262626]  border-none focus-visible:none max-md:py-6 col-span-3"
 							placeholder="Enter task"
 							{...register("todo", {
 								required: "This field is required",
@@ -166,14 +183,26 @@ const CreateCopy: React.FC = () => {
 							value={title}
 							onChange={(e: any) => setTitle(e.target.value)}
 						/>
+
 						<Textarea
-							className="w-full font-medium text-lg border-2 outline-none border-r-0 bg-[#262626] text-[#808080] border-none focus-visible:none max-md:py-6"
+							className="w-full font-medium text-lg border-2 outline-none text-white border-r-0 bg-[#262626] !placeholder-white border-none focus-visible:none max-md:py-6"
 							placeholder="Type your message here."
 							{...register("desc", {
 								required: "This field is required",
 							})}
 							value={desc}
 							onChange={(e: any) => setDesc(e.target.value)}
+						/>
+						<Input
+							type="datetime-local"
+							className="w-fit font-medium text-lg py-8 border-2 outline-none border-r-0 bg-[#262626] text-[#808080] border-none focus-visible:none max-md:py-6"
+							style={{ color: "white" }}
+							{...register("deadline", {
+								required: "This field is required",
+							})}
+							value={`${deadline}`}
+							min={new Date().toLocaleString()}
+							onChange={(e: any) => setDeadline(e.target.value)}
 						/>
 					</div>
 					<Button
@@ -193,7 +222,7 @@ const CreateCopy: React.FC = () => {
 					</Button>
 				</div>
 			</form>
-			<div className="flex flex-col gap-4 scroll-smooth mb-5">
+			<div className="flex flex-col gap-4 scroll-smooth my-5">
 				{<Tasks todos={todos} />}
 				{todos.length === 0 ? (
 					<div>
@@ -226,8 +255,6 @@ const CreateCopy: React.FC = () => {
 				)}
 			</div>
 			<div className="rounded-md mt-auto p-5 flex justify-center gap-20 text-lg bg-[#262626] max-md:gap-10">
-				<Image src={info} alt="inf" />
-				{/* <Image src={share} alt="share" /> */}
 				<Button variant="customBtn" onClick={() => handleSort("todo")}>
 					Sort A-Z
 				</Button>
