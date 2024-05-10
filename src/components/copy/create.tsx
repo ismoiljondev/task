@@ -5,6 +5,7 @@ import nodata from "@/logo/noitem.svg";
 import Image from "next/image";
 import trash from "@/logo/trash.svg";
 import logo from "@/logo/Logo.svg";
+import logout from "@/logo/logout.svg";
 import {
 	FieldPath,
 	Timestamp,
@@ -26,6 +27,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import Tasks from "../tasks/tasks";
 import Todolist from "../todolist/todolist";
+import { useRouter } from "next/navigation";
 type Todo = {
 	desc: string;
 	todo: string;
@@ -41,8 +43,8 @@ const CreateCopy: React.FC = () => {
 	const [deadline, setDeadline] = useState<number | string>("");
 	const [editValue, setEditValue] = useState(-1);
 	const [sortBy, setSortBy] = useState<string>("todo" || "completed");
-	const [userDetail, setUserDetail] = useState(null);
-
+	const [userDetail, setUserDetail] = useState<any>(null);
+	const router = useRouter();
 	const fetchUserData = async () => {
 		const user = auth.currentUser;
 		if (user) {
@@ -107,7 +109,9 @@ const CreateCopy: React.FC = () => {
 					{
 						...data,
 						completed: false,
+						desc: desc ? desc : "",
 						createdAt: new Date().toLocaleString(),
+						deadline: deadline ? deadline : "",
 					}
 				);
 			}
@@ -126,15 +130,15 @@ const CreateCopy: React.FC = () => {
 
 	const addTodo = () => {
 		try {
-			if (title?.trim() !== "" && desc.trim() !== "") {
+			if (title?.trim() !== "") {
 				addDoc(
 					collection(db, `Users/${auth?.currentUser?.uid}/todos`),
 					{
 						todo: title,
 						completed: false,
-						desc: desc,
+						desc: desc ? desc : "",
 						createdAt: new Date().toLocaleString(),
-						deadline: deadline,
+						deadline: deadline ? deadline : "",
 					}
 				);
 			}
@@ -211,12 +215,33 @@ const CreateCopy: React.FC = () => {
 	const handleSort = (sortKey: string) => {
 		setSortBy(sortKey);
 	};
+	const logOut = async () => {
+		try {
+			await auth.signOut();
+			router.push("/");
+		} catch (err) {
+			console.log(err);
+		}
+	};
 	return (
 		<div className="flex flex-col min-h-screen w-4/6 py-10 max-lg:w-4/5 my-10 max-md:w-5/6 max-md:p-4 max-sm:w-full justify-center  m-auto rounded-none md:rounded-2xl p-4 md:p-8 shadow-input bg-white dark:bg-black">
 			<form onSubmit={handleSubmit(onSubmit)} className="">
 				<div className="flex flex-col w-full gap-10 items-center">
-					<div>
+					<div className="flex justify-between items-center w-full">
+						<div></div>
 						<Image src={logo} alt="logo" />
+						<div className="flex gap-2 items-center ">
+							<p className="font-medium text-xl">
+								{userDetail?.firstName}
+							</p>
+							<Button
+								variant={"customBtn"}
+								className="cursor-pointer p-2 max-md:p-1 max-md:text-xs max-md:w-10 max- flex items-center"
+								onClick={logOut}
+							>
+								<Image src={logout} alt="logout" />
+							</Button>
+						</div>
 					</div>
 					<div className="w-full flex flex-col gap-3">
 						<Input

@@ -90,7 +90,9 @@ const Todolist = ({ todos, changeStatus, deleteTodo, setEdit }: todoProps) => {
 							</div>
 						</AccordionTrigger>
 						<AccordionContent
-							className={`${todo.desc ? "" : "hidden"}`}
+							className={`${
+								todo.desc || todo.deadline ? "" : "hidden"
+							}`}
 						>
 							<p>{todo.desc}</p>
 							<p className="text-[#808080] text-xs">
