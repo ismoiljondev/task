@@ -1,6 +1,10 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import {
+	getAuth,
+	setPersistence,
+	browserSessionPersistence,
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -20,5 +24,16 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth();
+// Enable session persistence
+setPersistence(auth, browserSessionPersistence)
+	.then(() => {
+		console.log(browserSessionPersistence);
+
+		console.log("Session persistence enabled");
+	})
+	.catch((error) => {
+		// Error occurred while enabling session persistence
+		console.error("Error enabling session persistence:", error);
+	});
 export const db = getFirestore(app);
 export default app;

@@ -128,6 +128,7 @@ const CreateCopy: React.FC = () => {
 		setDesc(todos[index].desc);
 		setDeadline(todos[index].deadline);
 		setEditValue(index);
+		router.push("#edit");
 	};
 
 	const addTodo = () => {
@@ -154,7 +155,7 @@ const CreateCopy: React.FC = () => {
 
 	const updateTodo = () => {
 		try {
-			if (title?.trim() !== "" && desc.trim() !== "") {
+			if (title?.trim() !== "") {
 				const todoDocRef = doc(
 					db,
 					`Users/${auth?.currentUser?.uid}/todos`,
@@ -227,7 +228,7 @@ const CreateCopy: React.FC = () => {
 	};
 	return (
 		<div className="flex flex-col min-h-screen w-4/6 py-10 max-lg:w-4/5 my-10 max-md:w-5/6 max-md:p-4 max-sm:w-full justify-center  m-auto rounded-none md:rounded-2xl p-4 md:p-8 shadow-input bg-white dark:bg-black">
-			<form onSubmit={handleSubmit(onSubmit)} className="">
+			<form onSubmit={handleSubmit(onSubmit)} className="" id="edit">
 				<div className="flex flex-col w-full gap-10 items-center">
 					<div className="flex justify-between items-center w-full">
 						<div></div>
