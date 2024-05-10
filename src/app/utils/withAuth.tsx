@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { auth } from "@/firebase";
 
 const withAuth = (WrappedComponent: any) => {
@@ -17,7 +17,7 @@ const withAuth = (WrappedComponent: any) => {
 			return () => {
 				unsubscribe();
 			};
-		}, []);
+		}, [router]);
 
 		return <WrappedComponent {...props} />;
 	};
