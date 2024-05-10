@@ -1,15 +1,15 @@
-"use client";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { auth } from "@/firebase";
 
 const withAuth = (WrappedComponent: any) => {
-	return (props: any) => {
+	const ComponentWithAuth = (props: any) => {
 		const router = useRouter();
 
 		useEffect(() => {
 			const unsubscribe = auth.onAuthStateChanged((user) => {
 				if (!user) {
+					// User is not logged in, redirect to login page
 					router.replace("/login");
 				}
 			});
@@ -21,6 +21,13 @@ const withAuth = (WrappedComponent: any) => {
 
 		return <WrappedComponent {...props} />;
 	};
+
+	// Add display name for the HOC
+	ComponentWithAuth.displayName = `WithAuth(${
+		WrappedComponent.displayName || WrappedComponent.name || "Component"
+	})`;
+
+	return ComponentWithAuth;
 };
 
 export default withAuth;
