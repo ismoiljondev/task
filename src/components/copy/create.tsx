@@ -66,6 +66,8 @@ const CreateCopy: React.FC = () => {
 		fetchUserData();
 	}, []);
 
+	console.log(userDetail);
+
 	useEffect(() => {
 		const unsubscribe = onSnapshot(
 			query(

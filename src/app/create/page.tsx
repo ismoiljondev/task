@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import CreateCopy from "@/components/copy/create";
 import withAuth from "@/utils/withAuth";
 const CreatPage = () => {
