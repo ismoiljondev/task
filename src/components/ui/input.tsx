@@ -1,7 +1,7 @@
 // Input component extends from shadcnui - https://ui.shadcn.com/docs/components/input
 "use client";
 import * as React from "react";
-import { cn } from "@/utils/cn";
+import { cn } from "@/app/utils/cn";
 import { useMotionTemplate, useMotionValue, motion } from "framer-motion";
 
 export interface InputProps

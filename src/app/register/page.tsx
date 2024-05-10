@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/app/utils/cn";
 import { IconBrandGoogle } from "@tabler/icons-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
