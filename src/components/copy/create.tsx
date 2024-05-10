@@ -1,13 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
 import plus from "@/logo/plus.svg";
 import nodata from "@/logo/noitem.svg";
 import Image from "next/image";
-import info from "@/logo/info.svg";
-import share from "@/logo/share.svg";
-import filter from "@/logo/filter.svg";
 import trash from "@/logo/trash.svg";
 import logo from "@/logo/Logo.svg";
 import {
@@ -26,9 +21,11 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 import { SubmitHandler, useForm } from "react-hook-form";
-import Todolist from "../todolist/todolist";
-import Tasks from "../tasks/tasks";
 import { Textarea } from "../ui/textarea";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import Tasks from "../tasks/tasks";
+import Todolist from "../todolist/todolist";
 type Todo = {
 	desc: string;
 	todo: string;
